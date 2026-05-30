@@ -58,6 +58,9 @@ func (s *Scanner) Scan(ctx context.Context) []ScanResult {
 	}
 	ips = removeDupes(ips)
 
+	prog := NewProgress(len(ips))
+	defer prog.Done()
+
 	var mu sync.Mutex
 	results := make([]ScanResult, 0, len(ips))
 	sem := make(chan struct{}, s.cfg.Concurrency)
@@ -74,6 +77,7 @@ func (s *Scanner) Scan(ctx context.Context) []ScanResult {
 			defer wg.Done()
 			defer func() { <-sem }()
 			res := s.scanTarget(ctx, ip)
+			prog.AddResult(res)
 			mu.Lock()
 			results = append(results, res)
 			mu.Unlock()

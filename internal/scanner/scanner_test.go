@@ -73,3 +73,68 @@ func TestRemoveDupes(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatProgressLabel(t *testing.T) {
+	tests := []struct {
+		name string
+		r    ScanResult
+		want string
+	}{
+		{
+			name: "single tcp port",
+			r: ScanResult{Alive: true, Methods: []MethodResult{
+				{Method: "tcp", Alive: true, Port: 80},
+			}},
+			want: "TCP(80)",
+		},
+		{
+			name: "multiple tcp ports",
+			r: ScanResult{Alive: true, Methods: []MethodResult{
+				{Method: "tcp", Alive: true, Port: 22},
+				{Method: "tcp", Alive: true, Port: 80},
+				{Method: "tcp", Alive: true, Port: 443},
+			}},
+			want: "TCP(22), TCP(80), TCP(443)",
+		},
+		{
+			name: "mixed methods with and without ports",
+			r: ScanResult{Alive: true, Methods: []MethodResult{
+				{Method: "tcp", Alive: true, Port: 80},
+				{Method: "arp", Alive: true},
+				{Method: "icmp", Alive: true},
+				{Method: "dns", Alive: true},
+			}},
+			want: "TCP(80), ARP, ICMP, DNS",
+		},
+		{
+			name: "filters out dead methods",
+			r: ScanResult{Alive: true, Methods: []MethodResult{
+				{Method: "tcp", Alive: true, Port: 22},
+				{Method: "tcp", Alive: false, Port: 80},
+				{Method: "arp", Alive: false},
+			}},
+			want: "TCP(22)",
+		},
+		{
+			name: "no methods",
+			r:    ScanResult{Alive: false},
+			want: "",
+		},
+		{
+			name: "all dead methods",
+			r: ScanResult{Alive: true, Methods: []MethodResult{
+				{Method: "tcp", Alive: false, Port: 80},
+				{Method: "arp", Alive: false},
+			}},
+			want: "",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := formatProgressLabel(tc.r)
+			if got != tc.want {
+				t.Errorf("formatProgressLabel() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
