@@ -1,5 +1,6 @@
 graphify-out
 .opencode
+*.json
 AGENTS.md
 /net_scan
 *.test
